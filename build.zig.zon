@@ -5,8 +5,8 @@
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .glib = .{
-            .url = "https://github.com/cataggar/glib/archive/38408f2538bafaade5ee4913bcb688f5ec1916c3.tar.gz",
-            .hash = "glib-2.89.1-QlvaJTZJ-QD5PIDMqL82q5rSWMRg1dIZYtn-cYpTfbM9",
+            .url = "https://github.com/cataggar/glib/archive/80b7993b8ebc8ef4e1ec7cfddd0058fc9f240288.tar.gz",
+            .hash = "glib-2.89.1-QlvaJRd9-wDAK1A57kjQVV2CbvgZGtBgzunXwx__us3H",
         },
     },
     .paths = .{
