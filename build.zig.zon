@@ -3,7 +3,12 @@
     .version = "4.9.3",
     .fingerprint = 0x7cfc85b9d557565b,
     .minimum_zig_version = "0.16.0",
-    .dependencies = .{},
+    .dependencies = .{
+        .glib = .{
+            .url = "https://github.com/cataggar/glib/archive/38408f2538bafaade5ee4913bcb688f5ec1916c3.tar.gz",
+            .hash = "glib-2.89.1-QlvaJTZJ-QD5PIDMqL82q5rSWMRg1dIZYtn-cYpTfbM9",
+        },
+    },
     .paths = .{
         "build.zig",
         "build.zig.zon",

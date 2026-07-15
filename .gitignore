@@ -9,3 +9,6 @@
 /cscope*
 /src/libslirp-version.h
 /tags
+/.zig-cache/
+/zig-out/
+/zig-pkg/

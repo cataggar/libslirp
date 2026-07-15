@@ -43,15 +43,13 @@ const sources = [_][]const u8{
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
-    const glib_prefix = b.option(
-        []const u8,
-        "glib-prefix",
-        "Path to the cataggar/glib zig-out prefix",
-    ) orelse "../glib/zig-out";
+    const glib_dep = b.dependency("glib", .{
+        .target = target,
+        .optimize = optimize,
+    });
 
     const write_files = b.addWriteFiles();
-    const version_h = write_files.add(
-        "libslirp-version.h",
+    const version_h = write_files.add("libslirp-version.h",
         \\/* SPDX-License-Identifier: BSD-3-Clause */
         \\#ifndef LIBSLIRP_VERSION_H_
         \\#define LIBSLIRP_VERSION_H_
@@ -89,7 +87,7 @@ pub fn build(b: *std.Build) void {
     });
     mod.addIncludePath(generated_headers);
     mod.addIncludePath(b.path("src"));
-    mod.addIncludePath(pathFromPrefix(b, glib_prefix, "include"));
+    mod.linkLibrary(glib_dep.artifact("glib-2.0"));
     mod.addCMacro("G_LOG_DOMAIN", "\"Slirp\"");
     mod.addCMacro("BUILDING_LIBSLIRP", "1");
     mod.addCMacro("LIBSLIRP_STATIC", "1");
@@ -116,16 +114,48 @@ pub fn build(b: *std.Build) void {
     lib.installHeader(b.path("src/libslirp.h"), "slirp/libslirp.h");
     lib.installHeader(version_h, "slirp/libslirp-version.h");
     b.installArtifact(lib);
-}
 
-fn pathFromPrefix(
-    b: *std.Build,
-    prefix: []const u8,
-    sub_path: []const u8,
-) std.Build.LazyPath {
-    const path = b.pathJoin(&.{ prefix, sub_path });
-    return if (std.fs.path.isAbsolute(path))
-        .{ .cwd_relative = path }
-    else
-        b.path(path);
+    const smoke_source = b.addWriteFiles().add("libslirp-smoke-test.c",
+        \\#include <slirp/libslirp.h>
+        \\#include <string.h>
+        \\
+        \\int main(void)
+        \\{
+        \\    const SlirpConfig config = {
+        \\        .version = SLIRP_CONFIG_VERSION_MAX,
+        \\        .in_enabled = true,
+        \\    };
+        \\    const SlirpCb callbacks = {0};
+        \\    Slirp *slirp;
+        \\
+        \\    if (strcmp(slirp_version_string(), "4.9.3") != 0)
+        \\        return 1;
+        \\
+        \\    slirp = slirp_new(&config, &callbacks, NULL);
+        \\    if (slirp == NULL)
+        \\        return 2;
+        \\
+        \\    slirp_cleanup(slirp);
+        \\    return 0;
+        \\}
+        \\
+    );
+    const smoke_module = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    });
+    smoke_module.addCSourceFile(.{
+        .file = smoke_source,
+        .flags = &.{"-std=gnu99"},
+    });
+    smoke_module.linkLibrary(lib);
+
+    const smoke_test = b.addExecutable(.{
+        .name = "libslirp-smoke-test",
+        .root_module = smoke_module,
+    });
+    const run_smoke_test = b.addRunArtifact(smoke_test);
+    const test_step = b.step("test", "Run the libslirp smoke test");
+    test_step.dependOn(&run_smoke_test.step);
 }
