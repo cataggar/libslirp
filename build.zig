@@ -43,6 +43,7 @@ const sources = [_][]const u8{
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const is_macos = target.result.os.tag == .macos;
     const glib_dep = b.dependency("glib", .{
         .target = target,
         .optimize = optimize,
@@ -88,6 +89,8 @@ pub fn build(b: *std.Build) void {
     mod.addIncludePath(generated_headers);
     mod.addIncludePath(b.path("src"));
     mod.linkLibrary(glib_dep.artifact("glib-2.0"));
+    if (is_macos)
+        mod.linkSystemLibrary("resolv", .{});
     mod.addCMacro("G_LOG_DOMAIN", "\"Slirp\"");
     mod.addCMacro("BUILDING_LIBSLIRP", "1");
     mod.addCMacro("LIBSLIRP_STATIC", "1");
